@@ -246,7 +246,7 @@ my $keep_same_seq= "yes"; #line 24
 my $pseudogenome_option = "yes"; #line 25
 ```
 </p>
-<b> Esl-sfetch option:</b> If the above pseudogenome_option is turned on, and this esl-sfetch option is set to "yes", sensommatic will write out contigs using the hmmer esl-sfetch tool. This option requires that the hmmer esl miniapps suits is installed. Setting this to "yes" will improves speed and will not impact or alter predictions.
+<b> Esl-sfetch option:</b> If the above pseudogenome_option is turned on, and this esl-sfetch option is set to "yes", sensommatic will write out contigs using the hmmer esl-sfetch tool. This option requires that the hmmer esl miniapps suits is installed. Setting this to "yes" will improves speed and will not impact or alter predictions. If you set this to "no", contigs are still exported to the pseudogenome file, though run-times may be slightly slower. 
 
 ```
 my $pseudogenome_esl = "yes"; #line 26
