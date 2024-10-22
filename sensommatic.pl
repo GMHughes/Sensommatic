@@ -22,6 +22,7 @@ my $block_region = 750; #Mask 750 nt at both ends of prediction, reduces occuran
 my $threads=20; #number of threads for blast
 my $hmm_filter = "yes"; #if "yes", use hmmsearch to ensure prediction contains 7TM domain. Minimises off target hits. May reduce recovery slightly.
 my $keep_same_seq= "yes"; #if yes, you may get multiple copies of the same gene if they occur at different positions (assuming 100% identical sequence)
+my $pseudogenome_option = "yes"; #Turn this off for large genomes where memory may max out
 my $pseudogenome_esl = "yes"; #write out contigs with hmmer esl-sfetch, requires hmmer esl suite. Improves speed, does not impact or alter predictions
 my $repeat_preds = 0; #Repeat predictions at difficult regions #0: Fast, #1: Slow (may pick up some extra hits)
 my $remove_intermediate= "yes"; #if yes, remove all intermediate output files
@@ -153,7 +154,7 @@ close HMM;
 
 #Check option
 my $pseudogenome_perl = "no"; #write out contigs with hits to pseudogenome using perl, does not require hmmer esl suite, slower
-if($pseudogenome_esl ne "yes" || $pseudogenome_esl ne "Yes"){
+if($pseudogenome_esl !~ m/^yes$/i){
     $pseudogenome_perl = "yes";
     $pseudogenome_esl = "no";
 }
@@ -176,10 +177,15 @@ push(@genome_info, $pseudogenome_esl);
 my $pseudogenome = "";
 
 #Output pseudogenome - only contigs with hits in output file (speed)
-if($pseudogenome_perl eq "yes" || $pseudogenome_esl eq "yes"){
+if($pseudogenome_option =~ m/^no$/){
+    push (@genome_info, $genomefile);
+}
+elsif($pseudogenome_perl eq "yes" || $pseudogenome_esl eq "yes"){
     $pseudogenome =&pseudogenome(@genome_info); 
     push (@genome_info, $pseudogenome);
 }
+
+
 my @names =&get_contigs(@genome_info); #get contig names
 my @seqs =&parse_fasta($receptorfile); #parse reference file
 my @receptors =&rename_refs(@seqs); #assign unique names to reference file
@@ -212,7 +218,10 @@ close ME;
 close SE;
 
 #Open genome or pseudogenome
-if ($pseudogenome_perl eq "yes" || $pseudogenome_esl eq "yes"){
+if($pseudogenome_option =~ m/^no$/){
+    open(GENOME, "$genomefile");
+}
+elsif ($pseudogenome_perl eq "yes" || $pseudogenome_esl eq "yes"){
     open(GENOME, "$pseudogenome"); #quicker version
 }
 else{
@@ -2727,13 +2736,13 @@ sub pseudogenome{
     if($pseudogenome_perl eq "yes"){ #write out contigs using perl
 	foreach my $C(@contigs) {
 	    $C =~ s/\>//;
-	    $C =~ s/\s//;
+	    #$C =~ s/\s//;
 	    {
 		local $/ = ">"; #  change line delimter to read in file by contig
 		open(GENOME, "$genome_assembly");
 		while(<GENOME>) {
 		    my $ContigSequence = $_; #store each contig of the genome file in $contig_seq
-		    if ($ContigSequence =~ m/$C/i){
+		    if ($ContigSequence =~ m/^$C/i){
 			$ContigSequence =~ s/\>//g;
 			my $PseudoGenome = ">".$ContigSequence."\n";
 			print(PSEUDO $PseudoGenome); #write out contig to pseudogenome
